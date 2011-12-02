@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+
+Dir.glob('/etc/portage/preserve-libs.d/*').each do |f|
+  name = File.basename(f)
+  paths = []
+
+  puts "Scanning #{name} for changes:"
+
+  File.open(f) do |fd|
+    paths = fd.readlines.map { |l| l.chomp }
+  end
+
+  uptodate = paths.select do |path|
+    print "  - #{path} ... "
+    if FileUtils.uptodate?("/var/db/pkg/preserved-libs/#{name}-0/NEEDED.ELF.2",
+                           Dir.glob("#{path}/**/*"))
+      puts "OK"
+      false
+    else
+      puts "STALE"
+      true
+    end
+  end.empty?
+
+  unless uptodate
+    puts " => Updating fake entry in /var/db"
+    system("fake-preserved-libs #{name} #{paths.join(" ")}")
+  end
+end

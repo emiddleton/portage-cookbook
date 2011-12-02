@@ -1,0 +1,3 @@
+pre_pkg_prerm() {
+	/usr/local/sbin/update-preserved-libs
+}
